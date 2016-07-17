@@ -1,0 +1,310 @@
+-- Drug Database CREATE & INSERTION 쿼리
+/*
+2016-07-07 이은솔
+Drug Table 구성 (4가지 Table로 구성)
+  1) Drug_Type: ARB, ACEI, CCB 등 약물이 어느 군에 속하는지에 대한 정보를 담고 있음.
+  2) Drug_GeneralInformation: 개별약의 일반적인 정보를 담고 있습니다.
+  3) Drug_AllEffect: 모든 약물에 대한 Indication, 또 sideeffect에 관한 정보를 담고 있음.
+*/
+
+/*
+Drug_Type Table
+
+Drug_Type에 관한 Table. ACEI, Diuretics 등 약물의 분류에 관한 코드 및 이름, 정보를 가지고 있음.
+
+ID (Integer형)
+Name (영문이름)
+Description (각 약군에 대한 정보)
+
+예) INSERT INTO Drug_Type (DrugType_ID, Name, Description)
+    VALUES (1, 'ACE Inhibitors', 'ACE억제제');
+*/
+CREATE TABLE Drug_Type (
+    DrugType_ID INT,
+    Name        VARCHAR (50),
+    Description VARCHAR (200) 
+);
+
+
+/*
+Drug_general information에 관한 테이블입니다.
+
+ID (Integer 형)
+상품명과 성분명의 한글, 영어 이름 (모두 문자형)
+DrugType (Integer 형): Drug_Type 데이터베이스의 ID가 들어감.
+  ex) 3이면 Drug_Type의 ID가 3인 Beta blockers에 해당
+Description (Text 형): 약에 관한 general inforatmion
+Sideeffect (Text 형): 약에 관한 side effect. 실제 알고리즘에 들어갈 side effect는 Drug_AllEffect에 넣어야함
+MinDose, MaxDose (Integer 형): 최소, 최대 용량
+*/
+
+CREATE TABLE Drug_GeneralInformation (
+    Drug_ID            INT,
+    KoreanBrandName    VARCHAR (50),
+    EnglishBrandName   VARCHAR (50),
+    KoreanGenericName  VARCHAR (50),
+    EnglishGenericName VARCHAR (50),
+    DrugType           INT,
+    Description        VARCHAR (200),
+    Sideeffect         VARCHAR (1000),
+    MinDose            INT,
+    MaxDose            INT
+);
+
+
+
+
+/* Drug_AllEffect 테이블
+
+약물 그룹 또는 개별 약물에 대해
+각 질환 또는 다른 Drug에 대해
+Indication, Relative CI, Absolute CI 등에 대해 scoring
+예를 들어, Indication은 2, Relative CI는 0.3, Absolute CI는 0.1
+Drug 상호작용에 대해서도 점수를 가지고 있음.
+
+Drug_Type (Integer 형): Drug_Type 테이블에서 정보를 가지고 옴
+Drug_General (Integer 형): Drug_GeneralInformation 테이블에서 정보를 가지고 옴.
+
+이 두가지 중 하나만 값이 있고 나머지는 null인게 바람직함
+
+Disease: Disease_GeneralInformation 테이블에서 정보를 가지고 옴.
+OtherDrug: Drug_GeneralInformation 테이블에서 정보를 가지고 옴.
+*/
+
+CREATE TABLE Drug_AllEffect (
+    AllEffect_ID      INT,
+    Drug_Type         INT,
+    Drug_General      INT,
+    Disease           INT,
+    OtherDrug_Type    INT,
+    OtherDrug_General INT,
+    Score             REAL,
+    Description       VARCHAR (500) 
+);
+
+/* Drug_Type data base 입력. 5가지 약 종류 + Others
+*/
+
+INSERT INTO Drug_Type (DrugType_ID, Name, Description)
+    VALUES (1, 'ACE Inhibitors', 'ACE억제제');
+INSERT INTO Drug_Type (DrugType_ID, Name, Description)
+    VALUES (2, 'ARBs', '안지오텐신차단제');
+INSERT INTO Drug_Type (DrugType_ID, Name, Description)
+    VALUES (3, 'Beta blockers', '베타차단제');
+INSERT INTO Drug_Type (DrugType_ID, Name, Description)
+    VALUES (4, 'CCBs', '칼슘차단제');
+INSERT INTO Drug_Type (DrugType_ID, Name, Description)
+    VALUES (5, 'Diuretics', '이뇨제');
+INSERT INTO Drug_Type (DrugType_ID, Name, Description)
+    VALUES (9999, 'Others', '기타');
+
+/* 2013 고혈압 Guideline Table 14 + 15 바탕으로 테스트약 구현 
+ 테스트용이므로 이름은 임의대로 하였고, Description과 Sideeffect는 표 14, 15만을 바탕으로 임의로 기입하였습니다.
+ KoreanBrandName에는 테스트용 이름, 나머지 이름은 비어놓음.
+*/
+
+INSERT INTO Drug_GeneralInformation (Drug_ID, KoreanBrandName, DrugType, Description, Sideeffect)
+    VALUES (10001, "ACEI대표", 1, 
+    "Test용 가상 약
+Indication: 심부전, 좌심실 비대, 관상동맥 질환, 당뇨병성 콩팥병, 뇌졸증, 노인 수측기단독고혈압, 심근경색 후, 심방세동 예방
+적극적 적응: 심부전, 당뇨병성 신증
+적응가능:
+주의 요망: 콩팥동맥협착증, 고칼륨혈증
+금기: 임신, 혈관부종",
+    "부작용: ...");    
+INSERT INTO Drug_GeneralInformation (Drug_ID, KoreanBrandName, DrugType, Description, Sideeffect)
+    VALUES (20001, "ARB대표", 2, 
+    "Test용 가상 약
+Indication: 심부전, 좌심실 비대, 관상동맥 질환, 당뇨병성 콩팥병, 뇌졸증, 노인 수측기단독고혈압, 심근경색 후, 심방세동 예방
+적극적 적응: 심부전, 당뇨병성 신증
+적응가능:
+주의 요망: 콩팥동맥협착증, 고칼륨혈증
+금기: 임신, 혈관부종",
+    "부작용: ...");    
+INSERT INTO Drug_GeneralInformation (Drug_ID, KoreanBrandName, DrugType, Description, Sideeffect)
+    VALUES (30001, "beta-blocker대표", 3, 
+    "Test용 가상 약
+Indication: 심부전, 관상동맥 질환, 심근경색 후 
+적극적 적응: 협심증, 심근경색
+적응가능: 빈맥성 부정맥
+주의 요망: 혈당 이상 증가, 말초혈관질환
+금기: 천식, 심한 서맥",
+    "부작용: ...");    
+INSERT INTO Drug_GeneralInformation (Drug_ID, KoreanBrandName, DrugType, Description, Sideeffect)
+    VALUES (40001, "CCB대표", 4, 
+    "Test용 가상 약
+Indication: 좌심실 비대, 관상동맥 질환, 뇌졸중, 노인 수축기단독고혈압
+적극적 적응: 노인 고혈압, 수축기단독고혈압, 협심증
+적응가능:
+주의 요망: 심부전
+금기: 서맥(non-dihydropiydines)",
+    "부작용: ...");
+INSERT INTO Drug_GeneralInformation (Drug_ID, KoreanBrandName, DrugType, Description, Sideeffect)
+    VALUES (50001, "Diuretics대표", 5, 
+    "Test용 가상 약
+    Indication: 심부전, 뇌졸중, 노인 수축기단독고혈압
+    적극적 적응: 심부전, 수축기단독고혈압
+    적응가능:
+    주의 요망: 혈당이상 증가
+    금기: 통풍, 저칼륨혈증",
+    "부작용: ...");    
+    
+/* 위의 information을 바탕으로 Drug_AllEffect 구성
+    Table 15를 우선 구현.
+*/
+
+INSERT INTO Drug_AllEffect (AllEffect_ID, Drug_Type, Disease, Description)
+    VALUES (1, 1, 1, "Indication"), (2, 1, 4, "Indication"), 
+    (3, 1, 11, "Relative contraindication"), (4, 1, 12, "Relative contraindication"),
+    (5, 1, 14, "Absolute contraindication"), (6, 1, 15, "Absolute contraindication"),
+    
+    (7, 2, 1, "Indication"), (8, 2, 4, "Indication"), 
+    (9, 2, 11, "Relative contraindication"), (10, 2, 12, "Relative contraindication"),
+    (11, 2, 14, "Absolute contraindication"), (12, 2, 15, "Absolute contraindication"),
+    
+    (13, 3, 3, "Indication"), (14, 3, 8, "Indication"), (15, 3, 9, "Indication"),
+    (16, 3, 10, "Relative contraindication"), (17, 3, 13, "Relative contraindication"),
+    (18, 3, 16, "Absolute contraindication"), (19, 3, 17, "Absolute contraindication"),
+    
+    (20, 4, 6, "Indication"), (21, 4, 7, "Indication"), (22, 4, 3, "Indication"),
+    (23, 4, 1, "Relative contraindication"), (24, 4, 18, "Absolute contraindication"),
+    
+    (25, 5, 1, "Indication"), (26, 5, 7, "Indication"), (27, 5, 10, "Relative contraindication"),
+    (28, 5, 19, "Absolute contraindication"), (29, 5, 20, "Absolute contraindication");
+
+/* 그림 5 구현
+    그룹별 상호작용 우선순위 고려
+*/
+
+INSERT INTO Drug_AllEffect (Alleffect_ID, Drug_Type, OtherDrug_Type, Score, Description)
+    VALUES (30, 1, 4, 1.6, "ARB + CCB 권장"), (31, 2, 4, 1.6, "ACEI + CCB 권장"),
+    (32, 1, 5, 1.6, "ARB + Diuretics 권장"), (33, 2, 5, 1.6, "ACEI + Diuretics 권장"),
+    (34, 4, 5, 1.6, "CCB + Diuretics 권장"),
+    (35, 4, 1, 1.6, "ARB + CCB 권장"), (36, 4, 2, 1.6, "ACEI + CCB 권장"),
+    (37, 5, 1, 1.6, "ARB + Diuretics 권장"), (38, 5, 2, 1.6, "ACEI + Diuretics 권장"),
+    (39, 5, 4, 1.6, "CCB + Diuretics 권장")
+
+/* Description에 따른 점수 부여.
+    Indication 시  * 1.5
+    Relative contraindication시 * 0.5
+    Absolute contraindication시 * 0.1
+*/
+
+UPDATE Drug_AllEffect
+    SET Score = 1.5
+    WHERE Description = "Indication";
+
+UPDATE Drug_AllEffect
+    SET Score = 0.5
+    WHERE Description = "Relative contraindication";
+
+UPDATE Drug_AllEffect
+    SET Score = 0.1
+    WHERE Description = "Absolute contraindication";
+
+
+
+-- Disease Database CREATE & INSERTION 쿼리
+/* Disease_List 테이블
+  우선 간단하게 구성
+  ID + 한글 + 영어 이름
+  질환에 대한 설명
+  CODE는 KCD7등과의 연계를 위한 추후 고려
+*/
+
+CREATE TABLE Disease_List (
+    Disease_ID     INT,
+    KoreanName     VARCHAR (50),
+    EnglishName    VARCHAR (50),
+    AdditionalName VARCHAR (200),
+    Description    VARCHAR (500),
+    CODE           VARCHAR (200) 
+);
+
+
+-- Table 14, 15에 있는 질환 list 입력
+
+INSERT INTO Disease_List (Disease_ID, KoreanName)
+    VALUES (1, "심부전"), (2, "좌심실 비대"), (5, "뇌졸중"), (6, "노인 고혈압"), (7, "수축기단독고혈압"),
+    (11, "콩팥동맥협착증"), (12, "고칼륨혈증"), (13, "말초혈관질환"), (14, "임신"), (15, "혈관부종"),
+    (16, "천식"), (17, "심한 서맥"), (18, "서맥(non-dihydropiydines"), (19, "통풍"), (20, "저칼륨혈증");
+
+INSERT INTO Disease_List (Disease_ID, KoreanName, AdditionalName)
+    VALUES (4, "당뇨병성 콩팥병", "당뇨병성 신증"), (3, "관상동맥 질환", "협심증"), 
+    (9, "빈맥성 부정맥", "심방세동 예방"), (8, "심근경색", "심근경색 후"), (10, "당뇨병", "혈당 이상 증가");
+
+
+
+-- 환자 Database CREATE & INSERTION 쿼리
+/* Patient_GeneralInformation 테이블
+    환자 기본 정보
+*/
+CREATE TABLE Patient_GeneralInformation (
+    Patient_ID INT,
+    KoreanName VARCHAR (10),
+    Sex        VARCHAR (1),
+    BirthDate  DATE
+);
+
+INSERT INTO Patient_GeneralInformation (Patient_ID, KoreanName, Sex, BirthDate)
+    VALUES (1, "이은솔", "M", "1985-02-14");
+
+/* 환자 질환 정보
+    Patient_GeneralInformation과 연결될 환자 ID
+    Disease_List와 연결된 Disease ID
+    진단 날짜
+    진단 이유
+*/
+
+CREATE TABLE Patient_Disease (
+    Patient_ID    INT,
+    Disease_ID    INT,
+    DiagnosisDate DATE,
+    Description   VARCHAR (100) 
+);
+
+
+/* 환자 BP 정보
+    Patient_GeneralInformation과 연결될 환자 ID
+    Systolic BP, Dystolic BP
+    Purse rate
+    측정 날짜
+*/
+CREATE TABLE Patient_BP (
+    Patient_ID    INT,
+    SBP           INT,
+    DBP           INT,
+    PR            INT,
+    MeasuringDate DATE
+);
+
+
+/* 환자가 먹는 약물에 관한 정보
+    Patient_GeneralInformation과 연결될 환자 ID
+    Drug_GeneralInformation과 연결될 Drug ID
+    Active: 현재 사용중인지 여부
+    Used: 과거에 사용한 적이 있는지
+    Dose: 약 용량
+    Resistance: 저항이 있었는지 여부
+    SideEffect: 부작용이 있었는지 여부
+    Score: 점수
+*/
+
+CREATE TABLE Patient_Drug (
+    Patient_ID  INT,
+    Drug_ID     INT,
+    Drug_Type   INT,
+    Active      BOOLEAN DEFAULT FALSE,
+    Used        BOOLEAN DEFAULT FALSE,
+    Dose        INT,
+    Resistance  BOOLEAN DEFAULT FALSE,
+    ResistanceDate    DATE,
+    SideEffect  BOOLEAN DEFAULT FALSE,
+    SideeffectDate    Date,
+    Score       REAL DEFAULT 1,
+    Description VARCHAR (100) 
+);
+
+
+
+
